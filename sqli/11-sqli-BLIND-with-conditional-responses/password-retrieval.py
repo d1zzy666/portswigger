@@ -26,10 +26,10 @@ import time
 import urllib3                                  # Used to suppress SSL warning
 
 # global variables
-labid = "0a9f0072034226de81f8c58200c5002f"              # UPDATE
+labid = "0a9f0072034226de81f8c58200c5002f"                  # UPDATE
 targetdomain = "web-security-academy.net"
-sessiontkn = "yqorggqNRw25PHFWOdk7njNUmdDDIUIP"            # UPDATE  
-trackingid = "yqorggqNRw25PHFWOdk7njNUmdDDIUIP"         # UPDATE  
+sessiontkn = "yqorggqNRw25PHFWOdk7njNUmdDDIUIP"             # UPDATE  
+trackingid = "B7f71YCyBkA6jtmZ"                             # UPDATE  
 
 charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 truetxt = "Welcome back!"
